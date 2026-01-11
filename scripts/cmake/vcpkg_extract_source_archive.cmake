@@ -117,12 +117,32 @@ function(vcpkg_extract_source_archive)
     cmake_path(APPEND_STRING source_path ".tmp" OUTPUT_VARIABLE temp_dir)
     file(REMOVE_RECURSE "${temp_dir}")
     file(MAKE_DIRECTORY "${temp_dir}")
-    vcpkg_execute_required_process(
-        ALLOW_IN_DOWNLOAD_MODE
-        COMMAND "${CMAKE_COMMAND}" -E tar xjf "${arg_ARCHIVE}"
-        WORKING_DIRECTORY "${temp_dir}"
-        LOGNAME extract
-    )
+    find_program(7ZIP_EXECUTABLE 7z PATHS "C:/Program Files/7-Zip" "C:/Program Files (x86)/7-Zip" NO_DEFAULT_PATH)
+    if(7ZIP_EXECUTABLE)
+        vcpkg_execute_required_process(
+            ALLOW_IN_DOWNLOAD_MODE
+            COMMAND "${7ZIP_EXECUTABLE}" x "${arg_ARCHIVE}" -y
+            WORKING_DIRECTORY "${temp_dir}"
+            LOGNAME extract-gz
+        )
+        file(GLOB tar_file "${temp_dir}/*.tar")
+        if(tar_file)
+            vcpkg_execute_required_process(
+                ALLOW_IN_DOWNLOAD_MODE
+                COMMAND "${7ZIP_EXECUTABLE}" x "${tar_file}" -y
+                WORKING_DIRECTORY "${temp_dir}"
+                LOGNAME extract-tar
+            )
+            file(REMOVE "${tar_file}")
+        endif()
+    else()
+        vcpkg_execute_required_process(
+            ALLOW_IN_DOWNLOAD_MODE
+            COMMAND "${CMAKE_COMMAND}" -E tar xjf "${arg_ARCHIVE}"
+            WORKING_DIRECTORY "${temp_dir}"
+            LOGNAME extract
+        )
+    endif()
 
     if(arg_NO_REMOVE_ONE_LEVEL)
         cmake_path(SET temp_source_path "${temp_dir}")

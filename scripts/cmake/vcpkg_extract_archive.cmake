@@ -37,9 +37,25 @@ function(vcpkg_extract_archive)
         vcpkg_execute_in_download_mode(
             COMMAND "$ENV{VCPKG_COMMAND}" z-extract "${arg_ARCHIVE}" "${arg_DESTINATION}")
     else()
-        vcpkg_execute_in_download_mode(
-            COMMAND "${CMAKE_COMMAND}" -E tar xzf "${arg_ARCHIVE}"
-            WORKING_DIRECTORY "${arg_DESTINATION}"
-        )
+        find_program(7ZIP_EXECUTABLE 7z PATHS "C:/Program Files/7-Zip" "C:/Program Files (x86)/7-Zip" NO_DEFAULT_PATH)
+        if(7ZIP_EXECUTABLE)
+            vcpkg_execute_in_download_mode(
+                COMMAND "${7ZIP_EXECUTABLE}" x "${arg_ARCHIVE}" -y
+                WORKING_DIRECTORY "${arg_DESTINATION}"
+            )
+            file(GLOB tar_file "${arg_DESTINATION}/*.tar")
+            if(tar_file)
+                vcpkg_execute_in_download_mode(
+                    COMMAND "${7ZIP_EXECUTABLE}" x "${tar_file}" -y
+                    WORKING_DIRECTORY "${arg_DESTINATION}"
+                )
+                file(REMOVE "${tar_file}")
+            endif()
+        else()
+            vcpkg_execute_in_download_mode(
+                COMMAND "${CMAKE_COMMAND}" -E tar xzf "${arg_ARCHIVE}"
+                WORKING_DIRECTORY "${arg_DESTINATION}"
+            )
+        endif()
     endif()
 endfunction()
